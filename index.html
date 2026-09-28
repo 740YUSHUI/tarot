@@ -393,6 +393,55 @@
   ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; opacity: 0.5; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
+  /* 更多功能弹出菜单 */
+  .more-menu {
+    position: fixed;
+    top: 58px;
+    right: 16px;
+    background: var(--ai-msg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-md);
+    padding: 10px;
+    display: none;
+    z-index: 50;
+    width: 280px;
+    transition: background 0.3s;
+  }
+  .more-menu.show { display: block; }
+  .more-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 12px;
+    border: 1px solid var(--border-light);
+    background: var(--bg);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .more-menu-item:hover { background: var(--bg-secondary); border-color: var(--border); }
+  .more-menu-item:active { transform: scale(0.97); }
+  .more-menu-full {
+    width: 100%;
+    justify-content: center;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: transparent;
+  }
+  .more-menu-full:hover { background: var(--accent); opacity: 0.85; }
+
   /* 侧边栏遮罩（移动端） */
   .sidebar-overlay {
     display: none;
@@ -474,6 +523,10 @@
     .form-textarea { font-size: 13px; min-height: 200px; }
     .btn-primary, .btn-secondary { padding: 11px; font-size: 14px; min-height: 44px; }
     .wv-mode-tab { padding: 9px; font-size: 12px; }
+
+    /* 更多菜单 */
+    .more-menu { top: 56px; right: 10px; width: calc(100vw - 20px); max-width: 320px; }
+    .more-menu-item { padding: 13px 12px; font-size: 14px; min-height: 48px; }
   }
 
   @media (max-width: 380px) {
@@ -538,6 +591,11 @@
       <polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
+    <symbol id="icon-more" viewBox="0 0 24 24">
+      <circle cx="12" cy="5" r="2" fill="currentColor"/>
+      <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      <circle cx="12" cy="19" r="2" fill="currentColor"/>
+    </symbol>
   </defs>
 </svg>
 
@@ -552,23 +610,36 @@
     <button class="mode-btn" data-mode="dream" onclick="setMode('dream')">梦向占卜</button>
   </div>
   <div class="topbar-right">
-    <button class="new-chat-btn" onclick="newChat()">
-      <svg class="svg-icon svg-icon-stroke" style="width:14px;height:14px"><use href="#icon-plus"/></svg>
-      新对话
-    </button>
-    <button class="icon-btn" onclick="toggleSidebar()" title="展开/收起侧边栏">
-      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-menu"/></svg>
-    </button>
-    <button class="icon-btn" onclick="openWorldviewModal()" title="世界观设置">
-      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-book"/></svg>
-    </button>
-    <button class="icon-btn" onclick="openApiModal()" title="API设置">
-      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-plug"/></svg>
-    </button>
-    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="切换日夜模式">
-      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-moon"/></svg>
+    <button class="icon-btn" onclick="toggleMoreMenu(event)" title="更多功能">
+      <svg class="svg-icon" style="width:18px;height:18px"><use href="#icon-more"/></svg>
     </button>
   </div>
+</div>
+
+<!-- 更多功能弹出菜单 -->
+<div class="more-menu" id="moreMenu">
+  <div class="more-menu-grid">
+    <button class="more-menu-item" onclick="toggleSidebar();closeMoreMenu()">
+      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-menu"/></svg>
+      <span>牌设置</span>
+    </button>
+    <button class="more-menu-item" onclick="openWorldviewModal();closeMoreMenu()">
+      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-book"/></svg>
+      <span>世界观</span>
+    </button>
+    <button class="more-menu-item" onclick="openApiModal();closeMoreMenu()">
+      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-plug"/></svg>
+      <span>API设置</span>
+    </button>
+    <button class="more-menu-item" id="themeBtnMenu" onclick="toggleTheme();updateThemeBtnIcon();closeMoreMenu()">
+      <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px" id="themeIconMenu"><use href="#icon-moon"/></svg>
+      <span>日夜模式</span>
+    </button>
+  </div>
+  <button class="more-menu-item more-menu-full" onclick="newChat();closeMoreMenu()">
+    <svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-plus"/></svg>
+    <span>新对话</span>
+  </button>
 </div>
 
 <div class="main">
@@ -780,17 +851,35 @@ function toggleTheme() {
   document.body.classList.toggle('dark');
   var isDark = document.body.classList.contains('dark');
   localStorage.setItem('tarot_theme', isDark ? 'dark' : 'light');
-  var btn = document.getElementById('themeBtn');
-  btn.innerHTML = isDark
-    ? '<svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-sun"/></svg>'
-    : '<svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-moon"/></svg>';
+  updateThemeBtnIcon();
+}
+function updateThemeBtnIcon() {
+  var isDark = document.body.classList.contains('dark');
+  var icon = document.getElementById('themeIconMenu');
+  if (icon) {
+    icon.innerHTML = '<use href="#icon-' + (isDark ? 'sun' : 'moon') + '"/>';
+  }
 }
 function loadTheme() {
   if (localStorage.getItem('tarot_theme') === 'dark') {
     document.body.classList.add('dark');
-    document.getElementById('themeBtn').innerHTML = '<svg class="svg-icon svg-icon-stroke" style="width:16px;height:16px"><use href="#icon-sun"/></svg>';
   }
+  updateThemeBtnIcon();
 }
+
+// ===== 更多菜单 =====
+function toggleMoreMenu(e) {
+  e.stopPropagation();
+  document.getElementById('moreMenu').classList.toggle('show');
+}
+function closeMoreMenu() {
+  document.getElementById('moreMenu').classList.remove('show');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#moreMenu') && !e.target.closest('[onclick*="toggleMoreMenu"]')) {
+    closeMoreMenu();
+  }
+});
 
 // ===== 世界观 =====
 function getWorldview(mode) {
