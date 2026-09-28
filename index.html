@@ -363,6 +363,15 @@
   }
   .api-status.success { display: block; background: rgba(45,122,74,0.1); color: #2d7a4a; }
   .api-status.error { display: block; background: rgba(184,56,56,0.1); color: #b83838; }
+  .model-list-item {
+    padding: 9px 14px; border: none; background: transparent;
+    text-align: left; font-size: 13px; cursor: pointer;
+    color: var(--text); font-family: inherit;
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s;
+  }
+  .model-list-item:last-child { border-bottom: none; }
+  .model-list-item:hover { background: var(--bg-secondary); }
 
   /* 世界观编辑器 */
   .wv-mode-tabs {
@@ -735,7 +744,14 @@
       </div>
       <div class="form-group">
         <label class="form-label">模型名称</label>
-        <input class="form-input" id="apiModel" placeholder="deepseek-chat">
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" id="apiModel" placeholder="deepseek-chat" list="modelListDatalist" style="flex:1;">
+          <button class="btn-secondary" style="padding:0 14px;flex-shrink:0;white-space:nowrap;font-size:13px;" onclick="fetchModels()">拉取模型</button>
+        </div>
+        <datalist id="modelListDatalist"></datalist>
+        <div id="modelListContainer" style="display:none;margin-top:8px;max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);">
+          <div id="modelList" style="display:flex;flex-direction:column;"></div>
+        </div>
       </div>
       <div class="api-status" id="apiStatus"></div>
     </div>
@@ -1254,6 +1270,52 @@ function showApiStatus(msg, type) {
   var el = document.getElementById('apiStatus');
   el.textContent = msg;
   el.className = 'api-status ' + type;
+}
+
+async function fetchModels() {
+  var base = document.getElementById('apiBase').value.trim();
+  var key = document.getElementById('apiKey').value.trim();
+  if (!base || !key) {
+    showApiStatus('请先填写 API 地址和 Key', 'error');
+    return;
+  }
+  showApiStatus('正在拉取模型列表…', 'success');
+  try {
+    var res = await fetch(base.replace(/\/$/,'') + '/models', {
+      method: 'GET',
+      headers: {'Authorization': 'Bearer ' + key}
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var models = data.data || [];
+    if (models.length === 0) {
+      showApiStatus('未获取到模型列表', 'error');
+      return;
+    }
+    var dl = document.getElementById('modelListDatalist');
+    dl.innerHTML = '';
+    var list = document.getElementById('modelList');
+    list.innerHTML = '';
+    models.forEach(function(m) {
+      var name = m.id || m.name || m.model || '';
+      if (!name) return;
+      var opt = document.createElement('option');
+      opt.value = name;
+      dl.appendChild(opt);
+      var item = document.createElement('button');
+      item.className = 'model-list-item';
+      item.textContent = name;
+      item.onclick = function() {
+        document.getElementById('apiModel').value = name;
+        document.getElementById('modelListContainer').style.display = 'none';
+      };
+      list.appendChild(item);
+    });
+    document.getElementById('modelListContainer').style.display = 'block';
+    showApiStatus('已拉取 ' + models.length + ' 个模型，点击选择', 'success');
+  } catch(e) {
+    showApiStatus('拉取失败：' + e.message, 'error');
+  }
 }
 
 function getSystemPrompt() { return getWorldview(currentMode); }
