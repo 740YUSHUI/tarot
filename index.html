@@ -393,9 +393,93 @@
   ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; opacity: 0.5; }
   ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
+  /* 侧边栏遮罩（移动端） */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 15;
+  }
+  .sidebar-overlay.show { display: block; }
+
   @media (max-width: 768px) {
-    .sidebar { position: fixed; left: 0; top: 52px; bottom: 0; z-index: 20; box-shadow: var(--shadow-md); }
-    .msg-bubble { max-width: 85%; }
+    body { font-size: 15px; -webkit-tap-highlight-color: transparent; }
+
+    /* 顶部栏 */
+    .topbar { height: 50px; padding: 0 12px; gap: 8px; }
+    .topbar-title { font-size: 14px; gap: 6px; }
+    .topbar-title .svg-icon { width: 18px; height: 18px; }
+    .mode-switch { margin-left: 8px; padding: 2px; }
+    .mode-btn { padding: 5px 10px; font-size: 12px; }
+    .topbar-right { gap: 5px; }
+    .icon-btn { width: 38px; height: 38px; min-width: 38px; min-height: 38px; }
+    .new-chat-btn { padding: 6px 10px; font-size: 12px; gap: 4px; }
+    .new-chat-btn span { display: none; }
+
+    /* 侧边栏抽屉式 */
+    .sidebar {
+      position: fixed; left: 0; top: 50px; bottom: 0;
+      width: 82vw; max-width: 320px; min-width: 0;
+      z-index: 20; box-shadow: var(--shadow-md);
+      margin-left: -100%; transition: margin-left 0.3s;
+    }
+    .sidebar.mobile-open { margin-left: 0; }
+
+    /* 主体 */
+    .main { height: calc(100vh - 50px); }
+
+    /* 聊天消息 */
+    .chat-messages { padding: 16px 0; }
+    .msg { gap: 8px; margin-bottom: 16px; padding: 0 12px; }
+    .msg-avatar { width: 30px; height: 30px; font-size: 11px; }
+    .msg-bubble { max-width: 78%; padding: 10px 14px; font-size: 14px; line-height: 1.65; }
+    .msg-cards { gap: 8px; padding: 10px; }
+    .msg-card-img { width: 52px; height: 87px; }
+    .msg-card-label { font-size: 9px; max-width: 56px; }
+
+    /* 欢迎页 */
+    .welcome-screen { padding: 20px; }
+    .welcome-title { font-size: 16px; }
+    .welcome-desc { font-size: 13px; }
+
+    /* 输入区 */
+    .chat-input-area { padding: 10px 12px 14px; }
+    .chat-input-container { gap: 8px; }
+    .chat-input { padding: 11px 14px; font-size: 15px; min-height: 44px; border-radius: 10px; }
+    .send-btn { width: 44px; height: 44px; min-width: 44px; border-radius: 10px; }
+    .input-hint { font-size: 10px; padding: 0 2px; }
+
+    /* 侧边栏内容 */
+    .sidebar-body { padding: 14px; }
+    .form-label { font-size: 12px; }
+    .form-select, .form-input { padding: 10px 12px; font-size: 14px; min-height: 42px; }
+    .card-slot { padding: 10px; }
+    .card-slot-num { font-size: 12px; }
+    .ori-btn { padding: 5px 10px; font-size: 11px; min-height: 30px; }
+    .card-thumb { width: 40px; height: 66px; }
+    .card-thumb-placeholder { width: 40px; height: 66px; font-size: 16px; }
+    .selected-card-name { font-size: 11px; }
+    .input-hint-small { font-size: 10px; }
+
+    /* 历史记录 */
+    .history-item { padding: 11px 12px; }
+    .history-item-title { font-size: 13px; }
+    .history-item-meta { font-size: 10px; }
+    .history-item-del { opacity: 1; width: 32px; height: 32px; }
+    .history-clear { margin: 10px 14px; padding: 10px; font-size: 12px; min-height: 40px; }
+
+    /* 弹窗 */
+    .modal { width: 92vw; padding: 20px; border-radius: 12px; max-height: 88vh; }
+    .modal.wide { width: 94vw; }
+    .modal-title { font-size: 16px; margin-bottom: 16px; }
+    .form-textarea { font-size: 13px; min-height: 200px; }
+    .btn-primary, .btn-secondary { padding: 11px; font-size: 14px; min-height: 44px; }
+    .wv-mode-tab { padding: 9px; font-size: 12px; }
+  }
+
+  @media (max-width: 380px) {
+    .topbar-title span { display: none; }
+    .mode-btn { padding: 5px 8px; font-size: 11px; }
+    .msg-bubble { max-width: 82%; }
   }
 </style>
 </head>
@@ -531,6 +615,9 @@
       <button class="history-clear" onclick="clearAllHistory()">清空全部历史</button>
     </div>
   </div>
+
+  <!-- 移动端侧边栏遮罩 -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
   <!-- 聊天区 -->
   <div class="chat-area">
@@ -781,13 +868,31 @@ function switchSidebarPanel(panel) {
   });
   if (panel === 'history') renderHistory();
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('show');
+  } else {
+    sidebar.classList.toggle('collapsed');
+  }
+}
+function closeSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('show');
+}
 
 // 点击聊天区空白处收起侧边栏（点消息本身不触发）
 document.querySelector('.chat-messages').addEventListener('click', function(e) {
   if (e.target.closest('.msg')) return;
   var sidebar = document.getElementById('sidebar');
-  if (!sidebar.classList.contains('collapsed')) {
+  if (window.innerWidth <= 768) {
+    closeSidebar();
+  } else if (!sidebar.classList.contains('collapsed')) {
     sidebar.classList.add('collapsed');
   }
 });
@@ -984,6 +1089,7 @@ function loadChat(id) {
       addMessage('ai', msg.content, null, true);
     }
   });
+  closeSidebar();
   switchSidebarPanel('cards');
 }
 
@@ -1075,6 +1181,7 @@ function newChat(skipSave) {
       '<div class="welcome-title">在左侧设置你抽到的牌</div>' +
       '<div class="welcome-desc">选择牌的数量，逐张录入你抽到的牌和正逆位（可下拉选择或手动输入牌名），然后在下方输入问题，AI 将结合牌面解读。支持多轮追问。</div>' +
     '</div>';
+  closeSidebar();
 }
 
 function sendMessage() {
